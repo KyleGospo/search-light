@@ -14,6 +14,7 @@ BuildArch:   noarch
 Requires:    gnome-shell >= 3.12
 
 BuildRequires: make
+BuildRequires: glib2
 
 %description
 This is a Gnome Shell extension that takes the apps search widget out of Overview. Like the macOS spotlight, or Alfred.
