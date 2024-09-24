@@ -2,9 +2,9 @@
 
 import { PrefKeys } from './prefKeys.js';
 
-export let schemaId = 'org.gnome.shell.extensions.search-light';
+export const schemaId = 'org.gnome.shell.extensions.search-light';
 
-export let SettingsKeys = function () {
+export const SettingsKeys = () => {
   let settingsKeys = new PrefKeys();
 
   settingsKeys.setKeys({
@@ -41,6 +41,10 @@ export let SettingsKeys = function () {
     'msg-to-ext': {
       default_value: '',
       widget_type: 'string',
+    },
+    'secondary-shortcut-search': {
+      default_value: [],
+      widget_type: 'shortcut',
     },
     'shortcut-search': {
       default_value: [],
@@ -83,6 +87,25 @@ export let SettingsKeys = function () {
     'show-panel-icon': {
       default_value: false,
       widget_type: 'switch',
+    },
+    'unit-converter': {
+      default_value: false,
+      widget_type: 'switch',
+    },
+    'currency-converter': {
+      default_value: false,
+      widget_type: 'switch',
+    },
+    'window-effect': {
+      default_value: 0,
+      widget_type: 'dropdown',
+      test: { values: [0, 1, 2] },
+      themed: true,
+    },
+    'window-effect-color': {
+      default_value: [1, 1, 1, 1],
+      widget_type: 'color',
+      themed: true,
     },
   });
 
