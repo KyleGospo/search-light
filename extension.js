@@ -22,6 +22,7 @@ import * as DND from 'resource:///org/gnome/shell/ui/dnd.js';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Clutter from 'gi://Clutter';
 import St from 'gi://St';
@@ -55,12 +56,10 @@ var SearchLight = GObject.registerClass(
   },
 );
 
-const BLURRED_BG_PATH = '/tmp/searchlight-bg-blurred.jpg';
-
 export default class SearchLightExt extends Extension {
   enable() {
     Main.overview.graphene = Graphene;
-
+    
     this._style = new Style();
 
     this._hiTimer = new Timer('hi-res timer');
@@ -138,7 +137,7 @@ export default class SearchLightExt extends Extension {
     this.mainContainer._delegate = this;
     this.container = new St.BoxLayout({
       name: 'searchLightBox',
-      vertical: true,
+      orientation: Clutter.Orientation.VERTICAL,
       reactive: true,
       track_hover: true,
       can_focus: true,
@@ -325,14 +324,17 @@ export default class SearchLightExt extends Extension {
 
   _updateBlurredBackground() {
     this.desktop_background = this._desktopSettings.get_string('picture-uri');
-    this.desktop_background_blurred = BLURRED_BG_PATH;
+    
+    let uuid = GLib.get_user_name();
+    this.desktop_background_blurred = `/tmp/searchlight-${uuid}-bg-blurred.jpg`;
+
     if (this.blur_background) {
       //   let color = this.background_color || [0, 0, 0, 0.5];
       //   let bg = this._desktopSettings.get_string('picture-uri');
       //   let a = Math.floor(100 - color[3] * 100);
       //   let rgb = this._style.hex(color);
-      // 	 let cmd = `convert -scale 10% -blur 0x2.5 -resize 200% -fill "${rgb}" -tint ${a} "${bg}" ${BLURRED_BG_PATH}`;
-      let cmd = `convert -scale 10% -blur 0x2.5 -resize 200% "${this.desktop_background}" ${BLURRED_BG_PATH}`;
+      // 	 let cmd = `convert -scale 10% -blur 0x2.5 -resize 200% -fill "${rgb}" -tint ${a} "${bg}" ${this.desktop_background_blurred}`;
+      let cmd = `convert -scale 10% -blur 0x2.5 -resize 200% "${this.desktop_background}" ${this.desktop_background_blurred}`;
       console.log(cmd);
       trySpawnCommandLine(cmd);
     }
@@ -450,7 +452,7 @@ export default class SearchLightExt extends Extension {
     this._updateCss();
     this._layout();
 
-    Meta.disable_unredirect_for_display(global.display);
+    global.compositor.disable_unredirect();
 
     this.mainContainer.show();
     this.container.show();
@@ -504,14 +506,14 @@ export default class SearchLightExt extends Extension {
         onComplete: () => {
           this._visible = false;
           this.mainContainer.hide();
-          Meta.enable_unredirect_for_display(global.display);
+          global.compositor.enable_unredirect();
         },
       });
     } else {
       this.mainContainer.opacity = 0;
       this._visible = false;
       this.mainContainer.hide();
-      Meta.enable_unredirect_for_display(global.display);
+      global.compositor.enable_unredirect();
     }
     // this._hidePopups();
   }
@@ -981,7 +983,7 @@ export default class SearchLightExt extends Extension {
     if (!this._entry) return;
     let focus = global.stage.get_key_focus();
     let appearFocused =
-      this._entry.contains(focus) || this._searchResults.contains(focus);
+      focus && (this._entry.contains(focus) || this._searchResults.contains(focus));
 
     if (!appearFocused) {
       // popups are not handled well.. hide immediately
@@ -998,7 +1000,7 @@ export default class SearchLightExt extends Extension {
     }
 
     // hide window immediately when activated
-    if (focus.activate) {
+    if (focus && focus.activate) {
       if (!focus._activate) {
         focus._activate = focus.activate;
         focus.activate = () => {
@@ -1012,7 +1014,7 @@ export default class SearchLightExt extends Extension {
   _onKeyPressed(obj, evt) {
     if (!this._entry) return;
     let focus = global.stage.get_key_focus();
-    if (!this._entry.contains(focus)) {
+    if (!focus || !this._entry.contains(focus)) {
       if (evt.get_key_symbol() === Clutter.KEY_Escape) {
         this.hide();
         return Clutter.EVENT_STOP;
